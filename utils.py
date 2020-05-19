@@ -7,22 +7,21 @@ from tqdm import tqdm
 def Video_to_Frames(Video_file):
     """
     Video_file: path to video
-    it returns a folder which contains the 
+    it returns a list which contains frames as narray format
     """
-    head, tail = os.path.split(Video_file)
-    output_location = head + "/" + tail[:-4]+ "_frames"
-    os.mkdir(output_location)
+    frames = []
+    cap = cv2.VideoCapture(Video_file)  
+    
+    while True:
+        ret, frame = cap.read()  
+        if not ret:
+            break # Reached end of video
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        frames.append(frame)
+        
+    cap.release()
+    return frames
 
-    vidcap = cv2.VideoCapture(Video_file) # name of the video
-    success, image = vidcap.read()
-    count = 0
-    while success: 
-        cv2.imwrite(output_location+"/frame%d.jpg" % count, image)     # save frame as JPEG file
-        success, image = vidcap.read()
-        #resized  = cv2.resize(image, (256, 256))
-        #cv2.imwrite(output_location+"/frame%d.jpg" % count, resized)
-        print('Read a new frame%d: '% count, success)
-        count += 1
 
 
 def Frames_to_Video(input_frames, out_video_name = "fusion_video.avi"):
@@ -37,7 +36,7 @@ def Frames_to_Video(input_frames, out_video_name = "fusion_video.avi"):
         size = (width,height)
         img_array.append(img)
      
-    print("Size of frames is: ", img_array.shape)
+    #print("Size of frames is: ", img_array.shape)
     out = cv2.VideoWriter(out_video_name, cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
      
     for i in range(len(img_array)):
@@ -61,4 +60,5 @@ def resize(src, size, output_folder):
     #print('Resized Dimensions ', tail, ": ", resized.shape)
     name = output_folder + "/" + tail
     cv2.imwrite(name, resized)
+
 

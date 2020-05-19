@@ -1,12 +1,12 @@
 import imageio
 from skimage import color
 from PIL import Image
-import matplotlib.pyplot as plt
 import math
 import numpy as np
 from skimage import morphology
 from skimage.transform import resize
 import scipy
+import gzip
 import random
 
 image_len = 28
@@ -91,3 +91,77 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
         augmented_data_set['='].append(augmented_equal)
 
     return augmented_data_set
+
+
+def data_labeled(data):
+    """
+    A function to generate dataset
+    Input: data is dictionary contrains the key as labels and their values as a list of images
+            Data is given by generate_data function
+    output: X narray, and Y labels for each row in X
+    """
+
+    data_labeled = np.zeros((len(data['+'])*5, 28, 28))
+    labels = np.zeros((len(data['+'])*5, 1))
+    classes = {'+':0, '-': 1, '*':2, '/':3, '=':4}
+    
+    shift = 0
+    for i in data.keys():
+        for k in range(len(data[i])):
+            data_labeled[k+shift] = data[i][k]
+            labels[k+shift] = classes[i]
+        #We need a shift in order to avoid overwritting samples, each new key we start at zero    
+        shift += 100
+    return data_labeled, labels
+
+def concatenate_dataset(mnist, operators):
+    """
+    inputs: - mnist[0]: train_data,  mnist[1]:train_labels , mnist[2]: test_data,  mnist[3]:test_labels 
+            - operators[0]: train_data,  operators[1]:train_labels, operators[2]: train_data,  operators[3]:train_labels  <<<=== data_oper, labels_oper = data_labeled(data_operators)
+    output: train_imgs, train_labels, test_imgs, test_labels
+    """
+    train_imgs = np.concatenate((operators[0], mnist[0]), axis=0)
+    train_labels = np.concatenate((operators[1], mnist[1]), axis=0)
+
+    test_imgs = np.concatenate((operators[2], mnist[1]), axis=0)
+    test_labels =  np.concatenate((operators[3], mnist[3]), axis=0)
+    print("X_train shape: ", X_train.shape)
+    print("y_train shape: ", y_train.shape)
+
+    print("X_test shape: ", X_test.shape)
+    print("y_test shape: ", y_test.shape)
+    return  train_imgs, train_labels, test_imgs, test_labels
+
+def extract_data(filename, image_shape, image_number):
+    with gzip.open(filename) as bytestream:
+        bytestream.read(16)
+        buf = bytestream.read(np.prod(image_shape) * image_number)
+        data = np.frombuffer(buf, dtype=np.uint8).astype(np.float32)
+        data = data.reshape(image_number, image_shape[0], image_shape[1])
+    return data
+
+
+def extract_labels(filename, image_number):
+    with gzip.open(filename) as bytestream:
+        bytestream.read(8)
+        buf = bytestream.read(1 * image_number)
+        labels = np.frombuffer(buf, dtype=np.uint8).astype(np.int64)
+    return labels
+
+def load_mnist(data_folder = "./mnist"):
+    image_shape = (28, 28)
+    train_set_size = 60000
+    test_set_size = 10000
+
+    train_images_path = os.path.join(data_folder, 'train-images-idx3-ubyte.gz')
+    train_labels_path = os.path.join(data_folder, 'train-labels-idx1-ubyte.gz')
+    test_images_path = os.path.join(data_folder, 't10k-images-idx3-ubyte.gz')
+    test_labels_path = os.path.join(data_folder, 't10k-labels-idx1-ubyte.gz')
+
+    train_images = extract_data(train_images_path, image_shape, train_set_size)
+    test_images = extract_data(test_images_path, image_shape, test_set_size)
+    train_labels = extract_labels(train_labels_path, train_set_size)
+    test_labels = extract_labels(test_labels_path, test_set_size)
+    #mnist[0]: train_data,  mnist[1]:train_labels , mnist[2]: test_data,  mnist[3]:test_labels 
+    mnist = [train_images, train_labels, test_images, test_labels]
+    return mnist
