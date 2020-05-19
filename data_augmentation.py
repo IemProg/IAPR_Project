@@ -58,33 +58,43 @@ def apply_all(img, theta, unzoom, dx, dy):
 
 path = "operators/"
 
-plus_image = color.rgb2gray(imageio.imread(path + "+.png"))
-minus_image = color.rgb2gray(imageio.imread(path + "-.png"))
-multiply_image = color.rgb2gray(imageio.imread(path + "*.png"))
-divide_image = color.rgb2gray(imageio.imread(path + "%.png"))
-equal_image = color.rgb2gray(imageio.imread(path + "=.png"))
 
-plus_image_ds = rescale_down_sample(plus_image, image_len, image_wid)
-minus_image_ds = rescale_down_sample(minus_image, image_len, image_wid)
-multiply_image_ds = rescale_down_sample(multiply_image, image_len, image_wid)
-divide_image_ds = rescale_down_sample(divide_image, image_len, image_wid)
-equal_image_ds = rescale_down_sample(equal_image, image_len, image_wid)
+def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augmentation = 50):
+    """
+    path : Root path to images folder
+    image_len, image_wid:  parameters of the out images
+    n_augmentation: number os generated samples for each images
+
+    output: a dictionary with contains as key the signs, each key has a list of narrays.
+    """
+    plus_image = color.rgb2gray(imageio.imread(path + "+.png"))
+    minus_image = color.rgb2gray(imageio.imread(path + "-.png"))
+    multiply_image = color.rgb2gray(imageio.imread(path + "*.png"))
+    divide_image = color.rgb2gray(imageio.imread(path + "%.png"))
+    equal_image = color.rgb2gray(imageio.imread(path + "=.png"))
+
+    plus_image_ds = rescale_down_sample(plus_image, image_len, image_wid)
+    minus_image_ds = rescale_down_sample(minus_image, image_len, image_wid)
+    multiply_image_ds = rescale_down_sample(multiply_image, image_len, image_wid)
+    divide_image_ds = rescale_down_sample(divide_image, image_len, image_wid)
+    equal_image_ds = rescale_down_sample(equal_image, image_len, image_wid)
 
 
-augmented_data_set = {'+':[],'-':[],'*':[],'/':[],'=':[]}
-for i in range(n_augmentation):
-    theta = random.randint(0,360) if random.uniform(0,1) > 0.2 else 0
-    unzoom = random.uniform(0.5, 1) if random.uniform(0,1) > 0.2 else 1
-    dx = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
-    dy = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
-    augmented_plus = apply_all(plus_image_ds,theta, unzoom, dx, dy)
-    augmented_minus = apply_all(minus_image_ds,theta, unzoom, dx, dy)
-    augmented_multiply = apply_all(multiply_image_ds,theta, unzoom, dx, dy)
-    augmented_divide = apply_all(divide_image_ds,theta, unzoom, dx, dy)
-    augmented_equal = apply_all(equal_image_ds,theta, unzoom, dx, dy)
-    augmented_data_set['+'].append(augmented_plus)
-    augmented_data_set['-'].append(augmented_minus)
-    augmented_data_set['*'].append(augmented_multiply)
-    augmented_data_set['/'].append(augmented_divide)
-    augmented_data_set['='].append(augmented_equal)
+    augmented_data_set = {'+':[],'-':[],'*':[],'/':[],'=':[]}
+    for i in range(n_augmentation):
+        theta = random.randint(0,360) if random.uniform(0,1) > 0.2 else 0
+        unzoom = random.uniform(0.5, 1) if random.uniform(0,1) > 0.2 else 1
+        dx = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
+        dy = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
+        augmented_plus = apply_all(plus_image_ds,theta, unzoom, dx, dy)
+        augmented_minus = apply_all(minus_image_ds,theta, unzoom, dx, dy)
+        augmented_multiply = apply_all(multiply_image_ds,theta, unzoom, dx, dy)
+        augmented_divide = apply_all(divide_image_ds,theta, unzoom, dx, dy)
+        augmented_equal = apply_all(equal_image_ds,theta, unzoom, dx, dy)
+        augmented_data_set['+'].append(augmented_plus)
+        augmented_data_set['-'].append(augmented_minus)
+        augmented_data_set['*'].append(augmented_multiply)
+        augmented_data_set['/'].append(augmented_divide)
+        augmented_data_set['='].append(augmented_equal)
 
+    return augmented_data_set
