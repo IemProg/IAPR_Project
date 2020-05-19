@@ -7,6 +7,7 @@ import matplotlib.patches as mpatches
 import cv2 as cv
 from skimage.morphology import closing, square
 from skimage.segmentation import clear_border
+import math
 
    
 #----------------------------------------------------------------------
@@ -23,6 +24,7 @@ def label_image(image):
     mask = closing(thresholded , square(10) )
          
     cleared = clear_border(mask)
+    plt.imshow(cleared)
     
     labels, count = skimage.measure.label(cleared, connectivity=2, return_num=True)
     
@@ -60,7 +62,7 @@ def create_labeled_image(image,boxes,index):
     
     cv.imwrite(path, cv.cvtColor(image, cv.COLOR_BGR2RGB) )  
     
-    
+#----------------------------------------------------------------------   
 """ ADAPTED FROM LAB1 PART2: """
 # Brightness and contrast adjustments: new_img = src * alpha + beta
 # The parameters α>0 and β are often called the gain and bias parameters; 
@@ -79,9 +81,57 @@ def enhance_contrast(src, alpha = 1.0, beta = 0):
                 new_img[y, x, c] = np.clip(alpha * src[y, x, c] + beta, 0, 255)
     return new_img
 
+#---------------------------------------------------------------------------
+    #NOT COMPLETE
+def update_trajectory(image, last_pos):
+    arrow_mask =( image[:,:,0]> 100 )*(image[:,:,1]< 60)*(image[:,:,2]< 60)
+    fig, ax = plt.subplots()
+    ax.imshow(arrow_mask)
+    regions =  regionprops(label(arrow_mask))
+    if len(regions) > 1:     arrow = regions[np.argmax([reg.area for reg in regions])]
+    elif len(regions) == 1:  arrow =regions[0]
+    else: 
+        print("arrow not found")
+        return image, last_pos
+#    cy,cx = arrow.centroid
+#    
+#    x1 = cx + math.cos(arrow.orientation) * 0.5 * arrow.minor_axis_length
+#    y1 = cy - math.sin(arrow.orientation) * 0.5 * arrow.minor_axis_length
+#    ax.plot((cx, x1), (cy, y1), '-g', linewidth=2.5)
+#    ax.plot(cx, cy, '.g', markersize=15)
+    
+    
+    
+    y0, x0 = arrow.centroid
+    orientation = arrow.orientation
+    x1 = x0 + math.cos(orientation) * 0.5 * arrow.minor_axis_length
+    y1 = y0 - math.sin(orientation) * 0.5 * arrow.minor_axis_length
+    x2 = x0 - math.sin(orientation) * 0.5 * arrow.major_axis_length
+    y2 = y0 - math.cos(orientation) * 0.5 * arrow.major_axis_length
+
+    ax.plot((x0, x1), (y0, y1), '-r', linewidth=2.5)
+    ax.plot((x0, x2), (y0, y2), '-r', linewidth=2.5)
+    ax.plot(x0, y0, '.g', markersize=15)
+
+    minr, minc, maxr, maxc = arrow.bbox
+    bx = (minc, maxc, maxc, minc, minc)
+    by = (minr, minr, maxr, maxr, minr)
+    ax.plot(bx, by, '-b', linewidth=2.5)
+    
+    
+    
+    
+    
+    
+    return #[cy,cx], [y1,x1]
+
+
+
 
 # TESTING
+
 image = skimage.io.imread("robot_parcours_1_frames/frame0.jpg")
+
 
 boxes, symbols = label_image(image)
 
