@@ -62,7 +62,7 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
     """
     plus_image = color.rgb2gray(imageio.imread(path + "+.png"))
     minus_image = color.rgb2gray(imageio.imread(path + "-.png"))
-    multiply_image = color.rgb2gray(imageio.imread(path + "*.png"))
+    multiply_image = color.rgb2gray(imageio.imread(path + "dot.png"))
     divide_image = color.rgb2gray(imageio.imread(path + "%.png"))
     equal_image = color.rgb2gray(imageio.imread(path + "=.png"))
 
