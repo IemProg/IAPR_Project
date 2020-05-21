@@ -8,6 +8,7 @@ from skimage.transform import resize
 import scipy
 import gzip
 import random
+import os
 
 image_len = 28
 image_wid = 28
@@ -58,7 +59,7 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
     image_len, image_wid:  parameters of the out images
     n_augmentation: number os generated samples for each images
 
-    output: a dictionary with contains as key the signs, each key has a list of narrays.
+    output: two dictionaries one containing as key the signs, each key has a list of narrays.  The other one with the digits
     """
     plus_image = color.rgb2gray(imageio.imread(path + "+.png"))
     minus_image = color.rgb2gray(imageio.imread(path + "-.png"))
@@ -71,26 +72,44 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
     multiply_image_ds = rescale_down_sample(multiply_image, image_len, image_wid)
     divide_image_ds = rescale_down_sample(divide_image, image_len, image_wid)
     equal_image_ds = rescale_down_sample(equal_image, image_len, image_wid)
+    
+    mnist_ = load_mnist()
+    X_train = mnist_[0]
+    Y_train = mnist_[1]
+    X_test = mnist_[2]
+    Y_test = mnist_[3]
+    
+    X_train = X_train/255
+    X_train = 1 - X_train
+    zipped = zip(X_train, Y_train)
+    no_nine = list(filter(lambda s : s[1]!=9, zipped))
 
 
-    augmented_data_set = {'+':[],'-':[],'*':[],'/':[],'=':[]}
+    augmented_data_set_operators = {'+':[],'-':[],'*':[],'/':[],'=':[]}
+    augmented_data_set_digits = {'0':[],'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]}
     for i in range(n_augmentation):
-        theta = random.randint(0,360) if random.uniform(0,1) > 0.2 else 0
-        unzoom = random.uniform(0.5, 1) if random.uniform(0,1) > 0.2 else 1
-        dx = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
-        dy = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
+        for j in range(9*n_augmentation):
+            theta = random.randint(0,360) if random.uniform(0,1) > 0.2 else 0
+            unzoom = random.uniform(0.5, 1) if random.uniform(0,1) > 0.2 else 1
+            dx = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
+            dy = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
+            index = random.randint(0, len(no_nine))
+            image = no_nine[index][0]
+            class_ = no_nine[index][1]
+            augmented_digit = apply_all(image, theta, unzoom, dx, dy, image_len, image_wid)
+            augmented_data_set_digits[str(class_)].append(augmented_digit)
         augmented_plus = apply_all(plus_image_ds,theta, unzoom, dx, dy, image_len, image_wid)
         augmented_minus = apply_all(minus_image_ds,theta, unzoom, dx, dy, image_len, image_wid)
         augmented_multiply = apply_all(multiply_image_ds,theta, unzoom, dx, dy, image_len, image_wid)
         augmented_divide = apply_all(divide_image_ds,theta, unzoom, dx, dy, image_len, image_wid)
         augmented_equal = apply_all(equal_image_ds,theta, unzoom, dx, dy, image_len, image_wid)
-        augmented_data_set['+'].append(augmented_plus)
-        augmented_data_set['-'].append(augmented_minus)
-        augmented_data_set['*'].append(augmented_multiply)
-        augmented_data_set['/'].append(augmented_divide)
-        augmented_data_set['='].append(augmented_equal)
+        augmented_data_set_operators['+'].append(augmented_plus)
+        augmented_data_set_operators['-'].append(augmented_minus)
+        augmented_data_set_operators['*'].append(augmented_multiply)
+        augmented_data_set_operators['/'].append(augmented_divide)
+        augmented_data_set_operators['='].append(augmented_equal)
 
-    return augmented_data_set
+    return augmented_data_set_operators, augmented_data_set_digits
 
 
 def data_labeled(data):
