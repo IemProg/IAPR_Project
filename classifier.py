@@ -65,7 +65,7 @@ def model(batch_size = 100, n_epochs = 10, learning_rate = 0.2):
 
 
 #Prepare data
-data_operators = generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augmentation = 2000)
+data_operators, data_digits = generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augmentation = 2000)
 data_oper, labels_oper = data_labeled(data_operators)
 
 #mnist[0]: train_data,  mnist[1]:train_labels , mnist[2]: test_data,  mnist[3]:test_labels 
