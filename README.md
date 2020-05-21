@@ -3,7 +3,7 @@
 ## TO-DO List
 
 - [X] Extract signs, digits (Data Augmentation) : rotation, size, brighthness variant ... etc
-- [ ] Train a classifier on them (CNN)
+- [X] Train a classifier on them (CNN)
 	* [ ] Improve accuracy of the model.
 - [X] Method to track robot
 - [X] Plot a line for robot trajectory
