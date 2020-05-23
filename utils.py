@@ -39,7 +39,6 @@ def Video_to_Frames(Video_file):
 def rescale_intensity_levels(img):
     low, high = np.percentile(img, (0, 20))
     return rescale_intensity(img, in_range=(low, high))
-<<<<<<< HEAD
 
 def extract_red(im, threshold):
     """
@@ -208,7 +207,6 @@ def plot_trajectory2(frames_seen, centers_seen):
 
     end_width = 720 - start_width
     end_height = 900 - start_height
-
     resized_img = output[start_width : end_width, start_height:end_height, :]
     
     return resized_img, output
