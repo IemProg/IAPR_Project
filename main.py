@@ -16,7 +16,7 @@ ap.add_argument("-i", "--input", required=True,
 	help="path to input video")
 ap.add_argument("-o", "--output", required=True,
 	help="Output path to save video")
-ap.add_argument("-f", "--frames", type=int, default=0, required=False,
+ap.add_argument("-f", "--frames", type=int, default=2, required=False,
 	help="frames per second output video")
 
 args = vars(ap.parse_args())
@@ -25,7 +25,7 @@ args = vars(ap.parse_args())
 
 video_path = args['input']
 saving_path = args['output']
-frames_per_second = args['frames']
+FPS = args['frames']
 
 #################################################
 ##			       Loading Frames 		       ##
@@ -72,5 +72,5 @@ print("Generated frames: ", len(generating_frames))
 ##			       Saving Video 		       ##
 #################################################
 size = (generating_frames[0].shape[0],generating_frames[0].shape[1])
-print("size: ", size)
-vidwrite(saving_path, generating_frames, framerate=2, vcodec='libx264')
+#print("size: ", size)
+vidwrite(saving_path, generating_frames, framerate=FPS, vcodec='libx264')
