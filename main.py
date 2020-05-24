@@ -18,8 +18,6 @@ ap.add_argument("-o", "--output", required=True,
 	help="Output path to save video")
 
 ap.add_argument("-f", "--frames", type=int, default=2, required=False,
-
-ap.add_argument("-f", "--frames", type=int, default=0, required=False,
 	help="frames per second output video")
 
 args = vars(ap.parse_args())
