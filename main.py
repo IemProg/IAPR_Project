@@ -112,7 +112,8 @@ for k, frame in enumerate(frames):
 	generating_frames.append(new_frame)
 
 	#if the the label detected is equal means: STOP
-
+	if label_detected = "=":
+		break
 
 #print("Centers: {}".format(centers))
 print("Generated frames: ", len(generating_frames))
