@@ -18,7 +18,7 @@ from skimage.transform import resize
 from skimage.color import rgb2gray
 from tqdm import tqdm
 from scipy.spatial import distance
-import matplotlib.patches as patches
+import matplotlib.patches as mpatches
 
 def Video_to_Frames(Video_file):
     """
@@ -142,7 +142,7 @@ def plot_trajectory(frames_seen, centers_seen):
     resized = output[:480, :720, :]
     return resized.astype(np.uint8)
 
-def plot_trajectory2(frames_seen, centers_seen):
+def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed):
     """
     to plot the trajectory of the robot according to the running frame
     """
@@ -164,6 +164,17 @@ def plot_trajectory2(frames_seen, centers_seen):
     ax.set_axis_off()
     ax.plot(Y, X, "b")
     ax.plot(Y, X, "b.")
+
+    for i, box in enumerate(real_boxes):
+        [minr, minc, maxr, maxc] = box
+        if passed[i] == True:
+            rect = mpatches.Rectangle((minc, minr), (maxc - minc), (maxr - minr),
+                                      fill=False, edgecolor='red', linewidth= 1)
+        else:
+            rect = mpatches.Rectangle((minc, minr), (maxc - minc), (maxr - minr),
+                                      fill=False, edgecolor='white', linewidth= 1)
+        ax.add_patch(rect)
+        plt.text(x = box[0]+10, y = box[3]+10, s = str(predictions[i]))
 
     # Option 2: Save the figure to a string.
     canvas.draw()
@@ -252,13 +263,13 @@ def extract_valid_objects(boxes, centers, arrow_center):
     return valid_boxes2, valid_centers2
 
 
-def AllInfoFromFrame0(frame):
+def AllInfoFromFrame0(frame, arrow_center):
     """
     Assembling all the previous function into a main to get all the information we need from frame 0
     return : frame with every object withint a box
     """
     cleared, boxes, areas, centers = preprocess(frame)
-    real_boxes, real_centers = extract_valid_objects(boxes, centers)
+    real_boxes, real_centers = extract_valid_objects(boxes, centers, arrow_center)
     
     fig = Figure(figsize=(5, 4), dpi=180)
     fig.tight_layout(pad=0)
@@ -305,11 +316,39 @@ def extract_signs(boxes, frame):
     return : np array of [len(boxes), 28, 28] 
     """
     objects  = np.zeros((len(boxes), 28, 28))
+    frame = rgb2gray(frame)
+
     for i, box in enumerate(boxes):
         obj = frame[box[0]:box[2], box[1]: box[3]]
         obj = resize(obj, (28, 28))
         objects[i] = obj
     return objects
+
+def classify(boxes, signs):
+    """
+    A function to classify each sign from frame 0
+    boxes: list of [minr, minc, maxr, maxc]
+    signs: np array of [len(boxes), 28, 28]
+    return: dictionary contains id of each box as a key, value = [box, prediction of the box] 
+    """
+    mydictionary = {}
+    for i, box in enumerate(boxes):
+        prediction = Classifier(signs[i])
+        mydictionary[i] = prediction
+    return mydictionary
+
+def intersect(arrow_center, box_center):
+    """
+    A function to determine if box center overlapping operator/digit box
+    box_center: (cx, cy) of the box
+    arrow_box: (cx, cy) of the box around the red arrow
+    return: True/False
+    """
+    dst = distance.euclidean(arrow_center, box_center)
+    isIntersecting = False
+    if (dst < 30):
+        isIntersecting = True
+    return isIntersecting
 
 def vidwrite(fn, images, framerate = 2, vcodec='libx264'):
     """
