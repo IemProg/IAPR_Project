@@ -90,8 +90,9 @@ print("mypredictions: ", mypredictions)
 centers, seen_frames = [], []
 generating_frames = []
 
-increment = 10
 ordered = []
+ordered_labels = []
+
 
 for k, frame in enumerate(frames):
 	print("---- We are in frame: {}".format(k))
@@ -99,33 +100,54 @@ for k, frame in enumerate(frames):
 	# frame = frame * 255
 	#center, _ = detect_arrow(frame)
 	#centers.append(center)
-
 	centers.append(arrow_centers[k])
 	seen_frames.append(frame)
-	
+
 	# We need to check here if the center added does belong to operator/digit box 
 	# If it is True, we need to write the equation
 	for index, box in enumerate(real_boxes):
 		if intersect(arrow_centers[k], real_centers[index]):
 			print("\tI'm in box: {}: ".format(box))
 			label_detected = mypredictions[index]
+            
 			#TO-DO : We need a condition here to avoid the problem of labeling digit 1 as sign minus
-
+            #if previous symbol was an operator
+            if len(ordered)%2 and label_detected == '-':    label_detected = '1' 
+            #if previous symbol was a digit
+            elif not len(ordered)%2 and label_detected == '1':    label_detected = '-' 
+            
 			print("\tLabel: {}".format(label_detected))
 			passed[index] = True
 			#increment += 10
 			#Plot the the detected digit/operator on the frame
+            
+            #if the box with current index has not been ordered already:
 			if index not in ordered:
 				ordered.append(index)
+				ordered.append(index)
+                ordered_labels.append(label_detected)
+                
+    #frame generation placed after checking for = sign, = and the result will now appear at the same frame
 
-	_, written_frame = drawEquation(frame, mypredictions, ordered)
+    if ordered_labels[-1] == '=':
+        equation = ''.join(ordered_labels[:-1])
+        result =  result_equation1(equation)
+        
+        #print final result of the equation
+        ordered_labels.append(str(result))
+        print("Result: ",result)
+        
+        #print frame with final equation
+        _, written_frame = drawEquation(frame, ordered_labels)
+        new_frame, _ = plot_trajectory2(written_frame, centers, real_boxes, mypredictions, ordered, passed)
+	    generating_frames.append(new_frame)
+               
+        break
+        
+    _, written_frame = drawEquation(frame, ordered_labels)
 	new_frame, _ = plot_trajectory2(written_frame, centers, real_boxes, mypredictions, ordered, passed)
-	generating_frames.append(new_frame)
+    generating_frames.append(new_frame)
 
-	#if the the label detected is equal means: STOP
-	#if label_detected = "=":
-	#print final result of the equation
-	#break
 
 #print("Centers: {}".format(centers))
 print("Generated frames: ", len(generating_frames))

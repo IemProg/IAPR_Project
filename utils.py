@@ -203,7 +203,7 @@ def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, ordered
 
 from PIL import Image, ImageDraw, ImageFont
 
-def drawEquation(frame, mypredictions, seen_digits_index):
+def drawEquation(frame, ordered_labels):
     """
     to plot the trajectory of the robot according to the running frame
     """
@@ -216,22 +216,22 @@ def drawEquation(frame, mypredictions, seen_digits_index):
     incr = 10
     x_pos= frame.shape[0] - 50
     
-    for index in seen_digits_index:
+    for label in ordered_labels:
         #Writing equation should be here
         y_pos = 60 + incr
-        draw.text((y_pos, x_pos), str(mypredictions[index]), (255, 255, 255), font=font)
+        draw.text((y_pos, x_pos), label, (255, 255, 255), font=font)
         incr += 25
 
     return draw, asarray(img)
 
 def result_equation(equation):
-    #TO-DO :
-    result = 0 
-    for i, operator in enumerate(equation):
-        if i % 2 == 0:
-            result += int(operator)
-        else:
-            return None
+    return eval(equation)
+    # result = 0 
+    # for i, operator in enumerate(equation):
+    #     if i % 2 == 0:
+    #         result += int(operator)
+    #     else:
+    #         return None
 
 def preprocess(image):
     """
