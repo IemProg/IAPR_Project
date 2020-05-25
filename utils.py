@@ -142,7 +142,7 @@ def plot_trajectory(frames_seen, centers_seen):
     resized = output[:480, :720, :]
     return resized.astype(np.uint8)
 
-def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed):
+def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed, incr):
     """
     to plot the trajectory of the robot according to the running frame
     """
@@ -168,13 +168,18 @@ def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed)
     for i, box in enumerate(real_boxes):
         [minr, minc, maxr, maxc] = box
         if passed[i] == True:
+            x_pos= frames_seen.shape[0] - 50
+            y_pos = 60 + incr
             rect = mpatches.Rectangle((minc, minr), (maxc - minc), (maxr - minr),
                                       fill=False, edgecolor='red', linewidth= 1)
+            #Writing equation should be here
+            plt.text(x = x_pos, y = y_pos, s = str(predictions[i]), fontsize = 15)
         else:
             rect = mpatches.Rectangle((minc, minr), (maxc - minc), (maxr - minr),
                                       fill=False, edgecolor='white', linewidth= 1)
         ax.add_patch(rect)
-        plt.text(x = box[0]+10, y = box[3]+10, s = str(predictions[i]))
+        #Write labels
+        plt.text(x = box[0]+10, y = box[3]+10, s = str(predictions[i]), fontsize = 15)
 
     # Option 2: Save the figure to a string.
     canvas.draw()
@@ -186,6 +191,42 @@ def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed)
     #print("Output shape: ", output.shape)
     #new_img = resize(output, (480, 720, 3))
     #return new_img.astype(np.uint8)
+    start_width = int((720 - 480)/2)
+    start_height = int((900 - 720)/2)
+
+    end_width = 720 - start_width
+    end_height = 900 - start_height
+    resized_img = output[start_width : end_width, start_height:end_height, :]
+    
+    return resized_img, output
+
+def write_equation(frame, label, increment):
+
+    fig = Figure(figsize=(5, 4), dpi=180)
+    canvas = FigureCanvasAgg(fig)
+
+    # Do some plotting.
+    ax = fig.add_subplot(111, frameon=False)
+    ax.axis('off')
+    # To remove the huge white borders
+    ax.margins(0)
+    ax.margins(1)
+    
+    ax.imshow(frame)
+    ax.set_axis_off()
+    #Pixel posititon where to write the detected label
+    x_pos= frame.shape[0] - 50
+    y_pos = 100 + increment
+    plt.text(x = x_pos, y = y_pos, s = str(label), fontsize = 15)
+    
+    # Option 2: Save the figure to a string.
+    canvas.draw()
+    s, (width, height) = canvas.print_to_buffer()
+    
+    # Option 2a: Convert to a NumPy array.
+    output = np.frombuffer(s, np.uint8).reshape((height, width, 4))
+    output = output[:,:,:3]
+
     start_width = int((720 - 480)/2)
     start_height = int((900 - 720)/2)
 
@@ -346,7 +387,7 @@ def intersect(arrow_center, box_center):
     """
     dst = distance.euclidean(arrow_center, box_center)
     isIntersecting = False
-    if (dst < 30):
+    if (dst < 50):
         isIntersecting = True
     return isIntersecting
 

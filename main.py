@@ -89,6 +89,8 @@ print("mypredictions: ", mypredictions)
 centers, seen_frames = [], []
 generating_frames = []
 
+increment = 10
+
 for k, frame in enumerate(frames):
 	print("---- We are in frame: {}".format(k))
 	#if frame.max() <= 1:					#Because resize() in plot trajectory, it rescales frames
@@ -106,14 +108,15 @@ for k, frame in enumerate(frames):
 			label_detected = mypredictions[index]
 			print("\tLabel: {}".format(label_detected))
 			passed[index] = True
+			increment += 10
 			#Plot the the detected digit/operator on the frame
 
-	new_frame, _ = plot_trajectory2(frame, centers, real_boxes, mypredictions, passed)
+	new_frame, _ = plot_trajectory2(frame, centers, real_boxes, mypredictions, passed, increment)
 	generating_frames.append(new_frame)
 
 	#if the the label detected is equal means: STOP
-	if label_detected = "=":
-		break
+	#if label_detected = "=":
+	#break
 
 #print("Centers: {}".format(centers))
 print("Generated frames: ", len(generating_frames))

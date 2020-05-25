@@ -70,46 +70,46 @@ class CNN(nn.Module):
 
 
 def model(batch_size = 100, n_epochs = 10, learning_rate = 0.2):
-	accuracies = []
-	for iter_ in range(1):
-	    cnn = CNN()
-	    train_losses = cnn.train_(train_images_norm, train_labels, n_epochs, learning_rate, batch_size)
-	    accuracy = cnn.test_(batch_size, test_images_norm, test_labels)
-	    accuracies.append(accuracy)
-	    print("------- Completed run: {} --------".format(iter_))
-	mean_accuracy = sum(accuracies)/1.0
-	print("Accuracy for CNN on test set with 10 epochs averaged over 1 runs : " + str(mean_accuracy))
+    accuracies = []
+    for iter_ in range(1):
+        cnn = CNN()
+        train_losses = cnn.train_(train_images_norm, train_labels, n_epochs, learning_rate, batch_size)
+        accuracy = cnn.test_(batch_size, test_images_norm, test_labels)
+        accuracies.append(accuracy)
+        print("------- Completed run: {} --------".format(iter_))
+    mean_accuracy = sum(accuracies)/1.0
+    print("Accuracy for CNN on test set with 10 epochs averaged over 1 runs : " + str(mean_accuracy))
     return cnn
 
 
 
-symbols_train ,digits_train = generate_data(n_augmentation = 5000)
-symbols_test, digits_test = generate_data(n_augmentation = 500)
+# symbols_train ,digits_train = generate_data(n_augmentation = 5000)
+# symbols_test, digits_test = generate_data(n_augmentation = 500)
 
-symbols_train_labeled = data_labeled(symbols_train, False)
-symbols_test_labeled = data_labeled(symbols_test, False)
-digits_train_labeled = data_labeled(digits_train, True)
-digits_test_labeled = data_labeled(digits_test, True)
+# symbols_train_labeled = data_labeled(symbols_train, False)
+# symbols_test_labeled = data_labeled(symbols_test, False)
+# digits_train_labeled = data_labeled(digits_train, True)
+# digits_test_labeled = data_labeled(digits_test, True)
 
-_mnist_ = [digits_train_labeled[0],digits_train_labeled[1], digits_test_labeled[0],digits_test_labeled[1]]
-_operators_ = [symbols_train_labeled[0],symbols_train_labeled[1],symbols_test_labeled[0],symbols_test_labeled[1]]
-train_imgs, train_labels, test_imgs, test_labels = concatenate_dataset(_mnist_,_operators_)
+# _mnist_ = [digits_train_labeled[0],digits_train_labeled[1], digits_test_labeled[0],digits_test_labeled[1]]
+# _operators_ = [symbols_train_labeled[0],symbols_train_labeled[1],symbols_test_labeled[0],symbols_test_labeled[1]]
+# train_imgs, train_labels, test_imgs, test_labels = concatenate_dataset(_mnist_,_operators_)
     
-scaler = StandardScaler()
-train_imgs = (255 - torch.IntTensor(train_imgs*255)).type(torch.FloatTensor)
-c = list(zip(train_imgs, train_labels))
-random.shuffle(c)
-train_imgs, train_labels = zip(*c)
-test_imgs = (255 - torch.IntTensor(test_imgs*255)).type(torch.FloatTensor)
-c = list(zip(test_imgs, test_labels))
-random.shuffle(c)
-test_imgs, test_labels = zip(*c)
-train_imgs = torch.cat(train_imgs)
-train_labels = torch.LongTensor(train_labels)
-test_imgs = torch.cat(test_imgs)
-test_labels = torch.FloatTensor(test_labels)
-train_images_norm = scaler.fit_transform(train_imgs.reshape(-1, 28*28)).reshape(-1, 28, 28)
-test_images_norm = scaler.transform(test_imgs.reshape(-1, 28*28)).reshape(-1, 28, 28)
+# scaler = StandardScaler()
+# train_imgs = (255 - torch.IntTensor(train_imgs*255)).type(torch.FloatTensor)
+# c = list(zip(train_imgs, train_labels))
+# random.shuffle(c)
+# train_imgs, train_labels = zip(*c)
+# test_imgs = (255 - torch.IntTensor(test_imgs*255)).type(torch.FloatTensor)
+# c = list(zip(test_imgs, test_labels))
+# random.shuffle(c)
+# test_imgs, test_labels = zip(*c)
+# train_imgs = torch.cat(train_imgs)
+# train_labels = torch.LongTensor(train_labels)
+# test_imgs = torch.cat(test_imgs)
+# test_labels = torch.FloatTensor(test_labels)
+# train_images_norm = scaler.fit_transform(train_imgs.reshape(-1, 28*28)).reshape(-1, 28, 28)
+# test_images_norm = scaler.transform(test_imgs.reshape(-1, 28*28)).reshape(-1, 28, 28)
 
 
-network = model(batch_size = 50, n_epochs = 10, learning_rate = 0.2)
+# network = model(batch_size = 50, n_epochs = 10, learning_rate = 0.2)
