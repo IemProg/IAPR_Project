@@ -211,7 +211,7 @@ def drawEquation(frame, ordered_labels):
     img = Image.fromarray(frame)
     draw = ImageDraw.Draw(img)
     #font = ImageFont.truetype('arial', 15)
-    font = ImageFont.truetype("Chalkduster.ttf", 30)
+    font = ImageFont.truetype("arial.ttf", 30)
 
     incr = 10
     x_pos= frame.shape[0] - 50

@@ -82,7 +82,7 @@ mypredictions = {}
 #for i, box in enumerate(real_boxes):
 #	mypredictions[i] = i	
 
-mypredictions =  {0: "2", 1: "3", 2: "*", 3: "=", 4: "7", 5: "7", 6: "/", 7: "2", 8: "3", 9: "1"}
+mypredictions =  {0: "2", 1: "3", 2: "*", 3: "=", 4: "7", 5: "7", 6: "/", 7: "2", 8: "3", 9: "+"}
 print("mypredictions: ", mypredictions)
 #################################################
 ##			       Editing Frames 		       ##
@@ -130,9 +130,9 @@ for k, frame in enumerate(frames):
                 
     #frame generation placed after checking for = sign, = and the result will now appear at the same frame
 
-    if ordered_labels[-1] == '=':
+    if ordered_labels and ordered_labels[-1] == '=':
         equation = ''.join(ordered_labels[:-1])
-        result =  result_equation1(equation)
+        result =  eval(equation)
         
         #print final result of the equation
         ordered_labels.append(str(result))
