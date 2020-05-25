@@ -77,11 +77,12 @@ for box in real_boxes:
 mypredictions = {}
 
 #Just to test the functionning of the script, since no classifier is provided
-#Note: predictio should has the same order as the boxes
+#Note: predictions should has the same order as the boxes
 
-for i, box in enumerate(real_boxes):
-	mypredictions[i] = i	
+#for i, box in enumerate(real_boxes):
+#	mypredictions[i] = i	
 
+mypredictions =  {0: "2", 1: "3", 2: "*", 3: "=", 4: "7", 5: "7", 6: "/", 7: "2", 8: "3", 9: "1"}
 print("mypredictions: ", mypredictions)
 #################################################
 ##			       Editing Frames 		       ##
@@ -90,6 +91,7 @@ centers, seen_frames = [], []
 generating_frames = []
 
 increment = 10
+ordered = []
 
 for k, frame in enumerate(frames):
 	print("---- We are in frame: {}".format(k))
@@ -97,36 +99,44 @@ for k, frame in enumerate(frames):
 	# frame = frame * 255
 	#center, _ = detect_arrow(frame)
 	#centers.append(center)
+
 	centers.append(arrow_centers[k])
 	seen_frames.append(frame)
-
+	
 	# We need to check here if the center added does belong to operator/digit box 
 	# If it is True, we need to write the equation
 	for index, box in enumerate(real_boxes):
 		if intersect(arrow_centers[k], real_centers[index]):
 			print("\tI'm in box: {}: ".format(box))
 			label_detected = mypredictions[index]
+			#TO-DO : We need a condition here to avoid the problem of labeling digit 1 as sign minus
+
 			print("\tLabel: {}".format(label_detected))
 			passed[index] = True
-			increment += 10
+			#increment += 10
 			#Plot the the detected digit/operator on the frame
+			if index not in ordered:
+				ordered.append(index)
 
-	new_frame, _ = plot_trajectory2(frame, centers, real_boxes, mypredictions, passed, increment)
+	_, written_frame = drawEquation(frame, mypredictions, ordered)
+	new_frame, _ = plot_trajectory2(written_frame, centers, real_boxes, mypredictions, ordered, passed)
 	generating_frames.append(new_frame)
 
 	#if the the label detected is equal means: STOP
 	#if label_detected = "=":
+	#print final result of the equation
 	#break
 
 #print("Centers: {}".format(centers))
 print("Generated frames: ", len(generating_frames))
 
 
-
 #################################################
 ##			       Saving Video 		       ##
 #################################################
-size = (generating_frames[0].shape[0],generating_frames[0].shape[1])
+#size = (generating_frames[0].shape[0], generating_frames[0].shape[1])
+print(len(generating_frames))
+print("Type: {}".format(type(generating_frames[0])))
 #print("size: ", size)
 vidwrite(saving_path, generating_frames, framerate=FPS, vcodec='libx264')
 

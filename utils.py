@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import ffmpeg
+from PIL import Image, ImageDraw, ImageFont
+from numpy import asarray
 
 from skimage.exposure import rescale_intensity
 from skimage.filters import median
@@ -142,7 +144,7 @@ def plot_trajectory(frames_seen, centers_seen):
     resized = output[:480, :720, :]
     return resized.astype(np.uint8)
 
-def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed, incr):
+def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, ordered, passed):
     """
     to plot the trajectory of the robot according to the running frame
     """
@@ -165,21 +167,20 @@ def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed,
     ax.plot(Y, X, "b")
     ax.plot(Y, X, "b.")
 
+    incr = 10
+    x_pos= frames_seen.shape[0] - 50
+
     for i, box in enumerate(real_boxes):
         [minr, minc, maxr, maxc] = box
         if passed[i] == True:
-            x_pos= frames_seen.shape[0] - 50
-            y_pos = 60 + incr
             rect = mpatches.Rectangle((minc, minr), (maxc - minc), (maxr - minr),
                                       fill=False, edgecolor='red', linewidth= 1)
-            #Writing equation should be here
-            plt.text(x = x_pos, y = y_pos, s = str(predictions[i]), fontsize = 15)
         else:
             rect = mpatches.Rectangle((minc, minr), (maxc - minc), (maxr - minr),
                                       fill=False, edgecolor='white', linewidth= 1)
         ax.add_patch(rect)
         #Write labels
-        plt.text(x = box[0]+10, y = box[3]+10, s = str(predictions[i]), fontsize = 15)
+        ax.text(x = box[3]+5, y = box[0], s = str(predictions[i]), fontsize = 10)
 
     # Option 2: Save the figure to a string.
     canvas.draw()
@@ -200,41 +201,37 @@ def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, passed,
     
     return resized_img, output
 
-def write_equation(frame, label, increment):
+from PIL import Image, ImageDraw, ImageFont
 
-    fig = Figure(figsize=(5, 4), dpi=180)
-    canvas = FigureCanvasAgg(fig)
+def drawEquation(frame, mypredictions, seen_digits_index):
+    """
+    to plot the trajectory of the robot according to the running frame
+    """
+    #Drawing
+    img = Image.fromarray(frame)
+    draw = ImageDraw.Draw(img)
+    #font = ImageFont.truetype('arial', 15)
+    font = ImageFont.truetype("Chalkduster.ttf", 30)
 
-    # Do some plotting.
-    ax = fig.add_subplot(111, frameon=False)
-    ax.axis('off')
-    # To remove the huge white borders
-    ax.margins(0)
-    ax.margins(1)
-    
-    ax.imshow(frame)
-    ax.set_axis_off()
-    #Pixel posititon where to write the detected label
+    incr = 10
     x_pos= frame.shape[0] - 50
-    y_pos = 100 + increment
-    plt.text(x = x_pos, y = y_pos, s = str(label), fontsize = 15)
     
-    # Option 2: Save the figure to a string.
-    canvas.draw()
-    s, (width, height) = canvas.print_to_buffer()
-    
-    # Option 2a: Convert to a NumPy array.
-    output = np.frombuffer(s, np.uint8).reshape((height, width, 4))
-    output = output[:,:,:3]
+    for index in seen_digits_index:
+        #Writing equation should be here
+        y_pos = 60 + incr
+        draw.text((y_pos, x_pos), str(mypredictions[index]), (255, 255, 255), font=font)
+        incr += 25
 
-    start_width = int((720 - 480)/2)
-    start_height = int((900 - 720)/2)
+    return draw, asarray(img)
 
-    end_width = 720 - start_width
-    end_height = 900 - start_height
-    resized_img = output[start_width : end_width, start_height:end_height, :]
-    
-    return resized_img, output
+def result_equation(equation):
+    #TO-DO :
+    result = 0 
+    for i, operator in enumerate(equation):
+        if i % 2 == 0:
+            result += int(operator)
+        else:
+            return None
 
 def preprocess(image):
     """
