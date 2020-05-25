@@ -95,36 +95,37 @@ ordered_labels = []
 
 
 for k, frame in enumerate(frames):
-	print("---- We are in frame: {}".format(k))
+    print("---- We are in frame: {}".format(k))
 	#if frame.max() <= 1:					#Because resize() in plot trajectory, it rescales frames
 	# frame = frame * 255
 	#center, _ = detect_arrow(frame)
 	#centers.append(center)
-	centers.append(arrow_centers[k])
-	seen_frames.append(frame)
+    centers.append(arrow_centers[k])
+    seen_frames.append(frame)
 
 	# We need to check here if the center added does belong to operator/digit box 
 	# If it is True, we need to write the equation
-	for index, box in enumerate(real_boxes):
-		if intersect(arrow_centers[k], real_centers[index]):
-			print("\tI'm in box: {}: ".format(box))
-			label_detected = mypredictions[index]
+    for index, box in enumerate(real_boxes):
+        if intersect(arrow_centers[k], real_centers[index]):
+            print("\tI'm in box: {}: ".format(box))
+            label_detected = mypredictions[index]
             
 			#TO-DO : We need a condition here to avoid the problem of labeling digit 1 as sign minus
             #if previous symbol was an operator
-            if len(ordered)%2 and label_detected == '-':    label_detected = '1' 
+            if len(ordered)%2 and label_detected == '-' :
+                label_detected = '1' 
             #if previous symbol was a digit
-            elif not len(ordered)%2 and label_detected == '1':    label_detected = '-' 
+            elif not len(ordered)%2 and label_detected == '1' :
+                label_detected = '-'
             
-			print("\tLabel: {}".format(label_detected))
-			passed[index] = True
+            print("\tLabel: {}".format(label_detected))
+            passed[index] = True
 			#increment += 10
 			#Plot the the detected digit/operator on the frame
             
             #if the box with current index has not been ordered already:
-			if index not in ordered:
-				ordered.append(index)
-				ordered.append(index)
+            if index not in ordered:
+                ordered.append(index)
                 ordered_labels.append(label_detected)
                 
     #frame generation placed after checking for = sign, = and the result will now appear at the same frame
@@ -140,13 +141,14 @@ for k, frame in enumerate(frames):
         #print frame with final equation
         _, written_frame = drawEquation(frame, ordered_labels)
         new_frame, _ = plot_trajectory2(written_frame, centers, real_boxes, mypredictions, ordered, passed)
-	    generating_frames.append(new_frame)
+        generating_frames.append(new_frame)
                
         break
         
     _, written_frame = drawEquation(frame, ordered_labels)
-	new_frame, _ = plot_trajectory2(written_frame, centers, real_boxes, mypredictions, ordered, passed)
+    new_frame, _ = plot_trajectory2(written_frame, centers, real_boxes, mypredictions, ordered, passed)
     generating_frames.append(new_frame)
+    print(''.join(ordered_labels))
 
 
 #print("Centers: {}".format(centers))
