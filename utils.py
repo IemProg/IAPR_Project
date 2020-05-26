@@ -106,7 +106,7 @@ def detect_arrow(src):
             cx, cy = int(cx),int(cy)
     center = (cx, cy)
     box = [minr, minc, maxr, maxc]
-    assert len(center) == 2, print("No arrow detected")
+    assert len(center) == 2, print("Warning : No arrow detected")
     return center, box
 
 
@@ -201,11 +201,50 @@ def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, ordered
     
     return resized_img, output
 
-from PIL import Image, ImageDraw, ImageFont
-
-def drawEquation(frame, mypredictions, seen_digits_index):
+def plot_trajectory3(frames_seen, centers_seen, real_boxes, predictions, passed):
     """
-    to plot the trajectory of the robot according to the running frame
+    @frames_seen: running frame at time t
+    @centers_seen: centers of the robot at time t
+    @real_boxes: All boxes of the detected objects
+    @predictions: Predictions by the classifer for each digit/operator
+    @passed: list boolean True for each index of the box that the robot did pass
+
+    return: frame with plotted trajectory of the robot according to the running frame, and boxes around detected objects
+    """
+    #Drawing
+    img = Image.fromarray(frames_seen)
+    draw = ImageDraw.Draw(img)
+    #font = ImageFont.truetype('arial', 15)
+    font = ImageFont.truetype("Chalkduster.ttf", 30)
+    
+    X, Y = list(zip(*centers_seen))
+    points = []
+    for j in range(len(X)):
+        points.append((Y[j], X[j]))
+    draw.line(points, (0, 0, 255),  width=2)
+    draw.point(points, (255, 0, 0))
+
+    x_pos= frames_seen.shape[0] - 50
+
+    for i, box in enumerate(real_boxes):
+        [minr, minc, maxr, maxc] = box
+        if passed[i] == True:
+            draw.rectangle([(minc, minr), (maxc, maxr)], outline="red")
+        else:
+            draw.rectangle([(minc, minr), (maxc, maxr)], outline="white")
+        
+        #Write labels
+        draw.text((box[3]+2, box[0]), str(predictions[i]), (0, 0, 0), font=font)
+        
+    return draw, asarray(img)
+
+def drawEquation(frame, ordered_labels):
+    """
+    @frame: running frame at time t
+    @mypredictions: Predictions by the classifer for each digit/operator
+    @seen_digits_index: a list of the index of the boxes that the robot did pass in order
+
+    return: frame with the operators of the equation detected until time t
     """
     #Drawing
     img = Image.fromarray(frame)
@@ -216,26 +255,21 @@ def drawEquation(frame, mypredictions, seen_digits_index):
     incr = 10
     x_pos= frame.shape[0] - 50
     
-    for index in seen_digits_index:
+    for label in ordered_labels:
         #Writing equation should be here
         y_pos = 60 + incr
-        draw.text((y_pos, x_pos), str(mypredictions[index]), (255, 255, 255), font=font)
+        draw.text((y_pos, x_pos), label, (255, 255, 255), font=font)
         incr += 25
 
     return draw, asarray(img)
 
 def result_equation(equation):
-    #TO-DO :
-    result = 0 
-    for i, operator in enumerate(equation):
-        if i % 2 == 0:
-            result += int(operator)
-        else:
-            return None
+    return eval(equation)
 
 def preprocess(image):
     """
-    Image: input frame (W, H, 3)
+    @Image: input frame (W, H, 3)
+    
     return: - cleared: clear mask of the input image
             - boxes, areas, centers : features for each object within the image
     """
@@ -272,8 +306,9 @@ def preprocess(image):
 
 def extract_valid_objects(boxes, centers, arrow_center):
     """
-    Boxes: input given by preprocessing function, [minr, minc, maxr, maxc]
-    centers: input given by preprocessing function, list of 2D tuples
+    @Boxes: input given by preprocessing function, [minr, minc, maxr, maxc]
+    @centers: input given by preprocessing function, list of 2D tuples
+    
     return valid boxes of objects and their centers
     """
     valid_boxes = boxes.copy()

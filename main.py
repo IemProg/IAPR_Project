@@ -61,8 +61,8 @@ for frame in frames:
 # Note: Real_boxes and real_centers should have the same order
 _, real_boxes, real_centers = AllInfoFromFrame0(frames[0], arrow_centers[0])
 objects = extract_signs(real_boxes, frames[0])
-print("Number of Detected Real_Boxes is: {}".format(len(real_boxes)))
-print("Shape of Extacted signs is: {}".format(objects.shape))
+#print("Number of Detected Real_Boxes is: {}".format(len(real_boxes)))
+#print("Shape of Extacted signs is: {}".format(objects.shape))
 
 # We initialise a list of False when the robot passed the box, we change the correspond boolean value to True
 passed = []
@@ -82,7 +82,7 @@ mypredictions = {}
 #for i, box in enumerate(real_boxes):
 #	mypredictions[i] = i	
 
-mypredictions =  {0: "2", 1: "3", 2: "*", 3: "=", 4: "7", 5: "7", 6: "/", 7: "2", 8: "3", 9: "1"}
+mypredictions =  {0: "2", 1: "3", 2: "*", 3: "=", 4: "7", 5: "7", 6: "/", 7: "2", 8: "3", 9: "+"}
 print("mypredictions: ", mypredictions)
 #################################################
 ##			       Editing Frames 		       ##
@@ -90,16 +90,11 @@ print("mypredictions: ", mypredictions)
 centers, seen_frames = [], []
 generating_frames = []
 
-increment = 10
+#increment = 10
 ordered = []
+ordered_labels = []
 
 for k, frame in enumerate(frames):
-	print("---- We are in frame: {}".format(k))
-	#if frame.max() <= 1:					#Because resize() in plot trajectory, it rescales frames
-	# frame = frame * 255
-	#center, _ = detect_arrow(frame)
-	#centers.append(center)
-
 	centers.append(arrow_centers[k])
 	seen_frames.append(frame)
 	
@@ -107,19 +102,39 @@ for k, frame in enumerate(frames):
 	# If it is True, we need to write the equation
 	for index, box in enumerate(real_boxes):
 		if intersect(arrow_centers[k], real_centers[index]):
-			print("\tI'm in box: {}: ".format(box))
 			label_detected = mypredictions[index]
 			#TO-DO : We need a condition here to avoid the problem of labeling digit 1 as sign minus
 
-			print("\tLabel: {}".format(label_detected))
+			#if previous symbol was an operator
+			if len(ordered)%2 and label_detected == '-':
+				label_detected = '1'
+			#if previous symbol was a digit
+			elif not len(ordered)%2 and label_detected == '1':
+				label_detected = '-'
+
 			passed[index] = True
 			#increment += 10
 			#Plot the the detected digit/operator on the frame
 			if index not in ordered:
 				ordered.append(index)
+				ordered_labels.append(label_detected)
 
-	_, written_frame = drawEquation(frame, mypredictions, ordered)
-	new_frame, _ = plot_trajectory2(written_frame, centers, real_boxes, mypredictions, ordered, passed)
+	#frame generation placed after checking for = sign, = and the result will now appear at the same frame
+	if ordered_labels and ordered_labels[-1] == '=':
+		equation = ''.join(ordered_labels[:-1])
+		result =  eval(equation)
+
+		#print final result of the equation
+		ordered_labels.append(str(result))
+		print("Result: ",result)
+
+		#print frame with final equation
+		_, written_frame = drawEquation(frame, ordered_labels)
+		_, new_frame = plot_trajectory3(written_frame, centers, real_boxes, mypredictions, passed)
+		generating_frames.append(new_frame)
+
+	_, written_frame = drawEquation(frame, ordered_labels)
+	_, new_frame = plot_trajectory3(written_frame, centers, real_boxes, mypredictions, passed)
 	generating_frames.append(new_frame)
 
 	#if the the label detected is equal means: STOP
@@ -127,17 +142,9 @@ for k, frame in enumerate(frames):
 	#print final result of the equation
 	#break
 
-#print("Centers: {}".format(centers))
-print("Generated frames: ", len(generating_frames))
-
-
 #################################################
 ##			       Saving Video 		       ##
 #################################################
-#size = (generating_frames[0].shape[0], generating_frames[0].shape[1])
-print(len(generating_frames))
-print("Type: {}".format(type(generating_frames[0])))
-#print("size: ", size)
 vidwrite(saving_path, generating_frames, framerate=FPS, vcodec='libx264')
 
 print("Script executed in: ", datetime.datetime.now() - begin_time)
