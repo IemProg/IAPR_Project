@@ -1,24 +1,20 @@
-# IAPR_Project
+# Image Analysis and Pattern Recognition Project
 
-## TO-DO List
+## Introduction:
 
-- [X] Extract signs, digits (Data Augmentation) : rotation, size, brighthness variant ... etc
-- [X] Train a classifier on them (CNN)
-	* [ ] Improve accuracy of the model.
-- [X] Method to track robot
-- [X] Plot a line for robot trajectory
-- [ ] At each robot stop (detection), display the number on screen
-- [X] Plot a box around the detected objects and label them
-	* [X]  Function to draw rectangle around the digits, operators.
-		
-	* [ ]  Function to see if robot passed by the object (True => label it).
-		
-	* [ ]  Function to draw equation on the frame (if object is detected).
-		
-- [ ] Calculate and display output  (On terminal and the last frame)
+This project is in the context of IAPR Course at EPFL, 
+In this special project, the task is to use image analysis skills to analyse the behaviour of a Lego​© Mindstorm​© robot in a specific environment. The environment is a flat arena of approximately 3 meters by 3 meters containing visual elements such as different mathematical operators and handwritten digits with different colors. 
 
+The exact position and orientation of these elements may vary. In this project, we use recordings of the environment by a camera mounted above the arena and pointed directly at the arena, such that the plane of the arena is parallel to the image plane of the camera.
 
+![](example.png)
 
+- Main task is to find the result of an equation based on a video sequence, as well, plotting the trajectory of the robot.
+
+# Requirements:
+```
+pip install -r requirements.txt
+```
 
 # Usage:
 ```
@@ -27,8 +23,7 @@ python  main.py --input /path/to/input/video.avi --output /path/to/your/result.a
 
 ***Video :***  ".avi" format, recorded at 2 FPS
 
-***Requirement:*** 
-- The current state of the formula at time t
-- The trajectory of the robot from start to time t
-               
-***Deadline:*** May 28th, 11:59 PM
+***Team Members:*** 
+- Imad Eddine MAROUF
+- Duvieusart Arnaud Jean Pierre-François Brigitte
+- Mert Ertuğrul
