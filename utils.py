@@ -102,6 +102,8 @@ def detect_arrow(src):
     label_image, b = skimage.measure.label(gray, connectivity=2, return_num=True)
     label_image_overlay = label2rgb(label_image, image=src, bg_label=0)
     centers = []
+
+    """       
     for region in skimage.measure.regionprops(label_image):
         # take regions with large enough areas
         if region.area >= 100:
@@ -112,6 +114,22 @@ def detect_arrow(src):
     box = [minr, minc, maxr, maxc]
     assert len(center) == 2, print("Warning : No arrow detected")
     return center, box
+    """
+
+    regions = skimage.measure.regionprops(label_image)
+    if len(regions) > 1:     arrow = regions[np.argmax([reg.area for reg in regions])]
+    elif len(regions) == 1:  arrow =regions[0]
+
+    minr, minc, maxr, maxc = arrow.bbox
+    cx,cy = arrow.centroid
+    cx, cy = int(cx),int(cy)  
+    
+    center = (cx, cy)
+    box = [minr, minc, maxr, maxc]
+
+    assert len(center) == 2, print("No arrow detected")
+    return center, box
+
 
 def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, ordered, passed):
     """
