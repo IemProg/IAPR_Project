@@ -2,9 +2,12 @@ import cv2
 import os, sys, time
 import ffmpeg
 
+import torch
+
 import argparse
 import matplotlib as mpl
 import datetime
+
 mpl.rc('figure', max_open_warning = 0)
 
 #3rd party library
@@ -79,10 +82,19 @@ mypredictions = {}
 #Just to test the functionning of the script, since no classifier is provided
 #Note: predictions should has the same order as the boxes
 
-#for i, box in enumerate(real_boxes):
-#	mypredictions[i] = i	
+for i, box in enumerate(real_boxes):
+	mypredictions[i] = i	
+predic = classify(objects, "cnn.pt")
 
-mypredictions =  {0: "2", 1: "3", 2: "*", 3: "=", 4: "7", 5: "7", 6: "/", 7: "2", 8: "3", 9: "+"}
+classes = {0:'+', 1:'-', 2:'*', 3:'/', 4:'=', 5:'0', 6:'1', 7:'2', 8:'3', 9:'4', 10:'5', 11:'6', 12:'7', 13:'8'}
+mypredictions = []
+for index in predic:
+	mypredictions.append(classes[index])
+
+
+# Those are hard-coded prediction to test the classifier, plotEquation
+#mypredictions =  {0: "2", 1: "3", 2: "*", 3: "=", 4: "7", 5: "7", 6: "/", 7: "2", 8: "3", 9: "+"}
+#mypredictions =  {0: "1", 1: "3", 2: "-", 3: "=", 4: "7", 5: "1", 6: "-", 7: "2", 8: "1", 9: "+"}
 print("mypredictions: ", mypredictions)
 #################################################
 ##			       Editing Frames 		       ##
@@ -106,10 +118,10 @@ for k, frame in enumerate(frames):
 			#TO-DO : We need a condition here to avoid the problem of labeling digit 1 as sign minus
 
 			#if previous symbol was an operator
-			if len(ordered)%2 and label_detected == '-':
+			if (len(ordered)%2 == 0) and label_detected == '-':
 				label_detected = '1'
 			#if previous symbol was a digit
-			elif not len(ordered)%2 and label_detected == '1':
+			elif (not len(ordered)%2 == 0) and label_detected == '1':
 				label_detected = '-'
 
 			passed[index] = True
@@ -121,8 +133,10 @@ for k, frame in enumerate(frames):
 
 	#frame generation placed after checking for = sign, = and the result will now appear at the same frame
 	if ordered_labels and ordered_labels[-1] == '=':
+		print("Ordered Labels: ", ordered_labels)
+		print("ordered: ", ordered)
 		equation = ''.join(ordered_labels[:-1])
-		result =  eval(equation)
+		result = eval(equation)
 
 		#print final result of the equation
 		ordered_labels.append(str(result))
@@ -130,11 +144,11 @@ for k, frame in enumerate(frames):
 
 		#print frame with final equation
 		_, written_frame = drawEquation(frame, ordered_labels)
-		_, new_frame = plot_trajectory3(written_frame, centers, real_boxes, mypredictions, passed)
+		_, new_frame = plot_trajectory(written_frame, centers, real_boxes, mypredictions, passed)
 		generating_frames.append(new_frame)
 
 	_, written_frame = drawEquation(frame, ordered_labels)
-	_, new_frame = plot_trajectory3(written_frame, centers, real_boxes, mypredictions, passed)
+	_, new_frame = plot_trajectory(written_frame, centers, real_boxes, mypredictions, passed)
 	generating_frames.append(new_frame)
 
 	#if the the label detected is equal means: STOP

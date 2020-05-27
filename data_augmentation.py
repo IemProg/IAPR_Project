@@ -1,3 +1,12 @@
+import torch
+from torch import optim, nn
+from torch.nn import functional as F
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+#from data_augmentation import *
+from sklearn.model_selection import train_test_split
+import random
+
 import imageio
 from skimage import color
 from PIL import Image
@@ -8,7 +17,8 @@ from skimage.transform import resize
 import scipy
 import gzip
 import random
-import os
+from tensorflow.keras.datasets import mnist
+
 
 image_len = 28
 image_wid = 28
@@ -35,15 +45,31 @@ def unzoom_image(img, unzoom):
     return scipy.ndimage.zoom(padded_img, unzoom, cval=1)
 
 def translate(img, dx, dy):
+    
     length, width = img.shape
-    while min(list(set(img[:, width - abs(dx):].flatten()))) < 0.98:
-        dx -=1
-        if dx == 1:
-            break
-    while min(list(set(img[length-abs(dy):, :].flatten()))) <0.98:
-        dy -=1
-        if dy == 1:
-            break
+
+    if abs(dx) > 1:
+        if dx > 0:
+            while min(list(set(img[:, width - dx:].flatten()))) < 0.98:
+                dx -=1
+                if dx == 1:
+                    break
+        else:
+            while min(list(set(img[:, :abs(dx)].flatten()))) < 0.98:
+                dx +=1
+                if dx == -1:
+                    break
+    if abs(dy) > 1:
+        if dy > 0: 
+            while min(list(set(img[length-dy:, :].flatten()))) <0.98:
+                dy -=1
+                if dy == 1:
+                    break
+        else:
+            while min(list(set(img[:abs(dy), :].flatten()))) <0.98:
+                dy +=1
+                if dy == -1:
+                    break
     x_moved = np.roll(img, dx, 1)
     return np.roll(x_moved, dy, 0)
 
@@ -62,7 +88,7 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
     """
     plus_image = color.rgb2gray(imageio.imread(path + "+.png"))
     minus_image = color.rgb2gray(imageio.imread(path + "-.png"))
-    multiply_image = color.rgb2gray(imageio.imread(path + "dot.png"))
+    multiply_image = color.rgb2gray(imageio.imread(path + "*.png"))
     divide_image = color.rgb2gray(imageio.imread(path + "%.png"))
     equal_image = color.rgb2gray(imageio.imread(path + "=.png"))
 
@@ -72,11 +98,12 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
     divide_image_ds = rescale_down_sample(divide_image, image_len, image_wid)
     equal_image_ds = rescale_down_sample(equal_image, image_len, image_wid)
     
-    mnist_ = load_mnist()
-    X_train = mnist_[0]
-    Y_train = mnist_[1]
-    X_test = mnist_[2]
-    Y_test = mnist_[3]
+    (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
+    _mnist_ = [X_train, Y_train, X_test, Y_test]
+    X_train = _mnist_[0]
+    Y_train = _mnist_[1]
+    X_test = _mnist_[2]
+    Y_test = _mnist_[3]
     
     X_train = X_train/255
     X_train = 1 - X_train
@@ -87,12 +114,12 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
     augmented_data_set_operators = {'+':[],'-':[],'*':[],'/':[],'=':[]}
     augmented_data_set_digits = {'0':[],'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]}
     for i in range(n_augmentation):
-        for j in range(9*n_augmentation):
+        for j in range(9):
             theta = random.randint(0,360) if random.uniform(0,1) > 0.2 else 0
             unzoom = random.uniform(0.5, 1) if random.uniform(0,1) > 0.2 else 1
-            dx = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
-            dy = random.randint(1, 5) if random.uniform(0,1) > 0.2 else 1
-            index = random.randint(0, len(no_nine))
+            dx = random.randint(-5, 5) if random.uniform(0,1) > 0.2 else 1
+            dy = random.randint(-5, 5) if random.uniform(0,1) > 0.2 else 1
+            index = random.randint(0, len(no_nine)-1)
             image = no_nine[index][0]
             class_ = no_nine[index][1]
             augmented_digit = apply_all(image, theta, unzoom, dx, dy, image_len, image_wid)
@@ -111,17 +138,21 @@ def generate_data(path = "operators/", image_len = 28, image_wid = 28, n_augment
     return augmented_data_set_operators, augmented_data_set_digits
 
 
-def data_labeled(data):
+def data_labeled(data, isDigit):
     """
     A function to generate dataset
     Input: data is dictionary contrains the key as labels and their values as a list of images
             Data is given by generate_data function
     output: X narray, and Y labels for each row in X
     """
-
-    data_labeled = np.zeros((len(data['+'])*5, 28, 28))
-    labels = np.zeros((len(data['+'])*5, 1))
-    classes = {'+':0, '-': 1, '*':2, '/':3, '=':4}
+    data_len = sum([len(x) for x in data.values()])
+    data_labeled = np.zeros((data_len, 28, 28))
+    labels = np.zeros((data_len, 1))
+    classes = {}
+    for index, k in enumerate(data.keys()):
+        if isDigit:
+            index+=5
+        classes[k] = index
     
     shift = 0
     for i in data.keys():
@@ -129,25 +160,25 @@ def data_labeled(data):
             data_labeled[k+shift] = data[i][k]
             labels[k+shift] = classes[i]
         #We need a shift in order to avoid overwritting samples, each new key we start at zero    
-        shift += 100
+        shift += len(data[i])
     return data_labeled, labels
 
 def concatenate_dataset(mnist, operators):
     """
     inputs: - mnist[0]: train_data,  mnist[1]:train_labels , mnist[2]: test_data,  mnist[3]:test_labels 
-            - operators[0]: train_data,  operators[1]:train_labels, operators[2]: train_data,  operators[3]:train_labels  <<<=== data_oper, labels_oper = data_labeled(data_operators)
+            - operators[0]: train_data,  operators[1]:train_labels, operators[2]: test_data,  operators[3]:test_labels  <<<=== data_oper, labels_oper = data_labeled(data_operators)
     output: train_imgs, train_labels, test_imgs, test_labels
     """
     train_imgs = np.concatenate((operators[0], mnist[0]), axis=0)
     train_labels = np.concatenate((operators[1], mnist[1]), axis=0)
 
-    test_imgs = np.concatenate((operators[2], mnist[1]), axis=0)
+    test_imgs = np.concatenate((operators[2], mnist[2]), axis=0)
     test_labels =  np.concatenate((operators[3], mnist[3]), axis=0)
-    print("X_train shape: ", X_train.shape)
-    print("y_train shape: ", y_train.shape)
+    print("X_train shape: ", train_imgs.shape)
+    print("y_train shape: ", train_labels.shape)
 
-    print("X_test shape: ", X_test.shape)
-    print("y_test shape: ", y_test.shape)
+    print("X_test shape: ", test_imgs.shape)
+    print("y_test shape: ", test_labels.shape)
     return  train_imgs, train_labels, test_imgs, test_labels
 
 def extract_data(filename, image_shape, image_number):
@@ -170,16 +201,16 @@ def load_mnist(data_folder = "./mnist"):
     image_shape = (28, 28)
     train_set_size = 60000
     test_set_size = 10000
-
+    '''
     train_images_path = os.path.join(data_folder, 'train-images-idx3-ubyte.gz')
     train_labels_path = os.path.join(data_folder, 'train-labels-idx1-ubyte.gz')
     test_images_path = os.path.join(data_folder, 't10k-images-idx3-ubyte.gz')
     test_labels_path = os.path.join(data_folder, 't10k-labels-idx1-ubyte.gz')
-
     train_images = extract_data(train_images_path, image_shape, train_set_size)
     test_images = extract_data(test_images_path, image_shape, test_set_size)
     train_labels = extract_labels(train_labels_path, train_set_size)
     test_labels = extract_labels(test_labels_path, test_set_size)
-    #mnist[0]: train_data,  mnist[1]:train_labels , mnist[2]: test_data,  mnist[3]:test_labels 
-    mnist = [train_images, train_labels, test_images, test_labels]
+    #mnist[0]: train_data,  mnist[1]:train_labels , mnist[2]: test_data,  mnist[3]:test_labels '''
+    (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
+    mnist = [X_train, Y_train, X_test, Y_test]
     return mnist

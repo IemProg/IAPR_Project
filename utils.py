@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import ffmpeg
 from PIL import Image, ImageDraw, ImageFont
 from numpy import asarray
+import torch
 
 from skimage.exposure import rescale_intensity
 from skimage.filters import median
@@ -22,10 +23,13 @@ from tqdm import tqdm
 from scipy.spatial import distance
 import matplotlib.patches as mpatches
 
+from classifier import CNN
+
 def Video_to_Frames(Video_file):
     """
-    Video_file: path to video
-    it returns a list which contains frames as narray format
+    @Video_file: path to video
+
+    return: a list which contains frames as narray format
     """
     frames = []
     cap = cv2.VideoCapture(Video_file)  
@@ -109,41 +113,6 @@ def detect_arrow(src):
     assert len(center) == 2, print("Warning : No arrow detected")
     return center, box
 
-
-def plot_trajectory(frames_seen, centers_seen):
-    """
-    to plot the trajectory of the robot according to the running frame
-    """
-    fig = Figure(figsize=(5, 4), dpi=180)
-    # A canvas must be manually attached to the figure (pyplot would automatically
-    # do it).  This is done by instantiating the canvas with the figure as
-    # argument.
-    canvas = FigureCanvasAgg(fig)
-
-    # Do some plotting.
-    ax = fig.add_subplot(111)
-    X, Y = list(zip(*centers_seen))
-    fig.tight_layout(pad=0)
-    ax.axis('off')
-    ax.margins(0)
-    ax.margins(1)
-
-    ax.imshow(frames_seen)
-    ax.set_axis_off()
-    ax.plot(Y, X, "b")
-    ax.plot(Y, X, "b.")
-
-    # Option 2: Save the figure to a string.
-    canvas.draw()
-    s, (width, height) = canvas.print_to_buffer()
-    #print(width, height)
-    # Option 2a: Convert to a NumPy array.
-    output = np.frombuffer(s, np.uint8).reshape((height, width, 4))
-    output = output[:,:,:3]
-    #new_img = resize(output, (480, 720, 3))
-    resized = output[:480, :720, :]
-    return resized.astype(np.uint8)
-
 def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, ordered, passed):
     """
     to plot the trajectory of the robot according to the running frame
@@ -201,7 +170,7 @@ def plot_trajectory2(frames_seen, centers_seen, real_boxes, predictions, ordered
     
     return resized_img, output
 
-def plot_trajectory3(frames_seen, centers_seen, real_boxes, predictions, passed):
+def plot_trajectory(frames_seen, centers_seen, real_boxes, predictions, passed):
     """
     @frames_seen: running frame at time t
     @centers_seen: centers of the robot at time t
@@ -397,18 +366,44 @@ def extract_signs(boxes, frame):
         objects[i] = obj
     return objects
 
-def classify(boxes, signs):
+def binarize(elem, threshold = 120):
+    if elem<threshold:
+        return 0
+    else:
+        return elem
+
+def classify(narray, model_name):
     """
     A function to classify each sign from frame 0
-    boxes: list of [minr, minc, maxr, maxc]
-    signs: np array of [len(boxes), 28, 28]
+    @narray: numpy array of shape [N, 28, 28] of detected objects from frame 0
+    @model_name: name of pretrained model
+
     return: dictionary contains id of each box as a key, value = [box, prediction of the box] 
     """
-    mydictionary = {}
-    for i, box in enumerate(boxes):
-        prediction = Classifier(signs[i])
-        mydictionary[i] = prediction
-    return mydictionary
+    binarize_vec = np.vectorize(binarize)
+
+    classes = {0:'+',1:'-',2:'*',3:'/',4:'=',5:'0',6:'1',7:'2',8:'3',9:'4',10:'5',11:'6',12:'7',13:'8'}
+    
+    predictions = []
+    scaler = torch.load("scaler.pt")
+    model = CNN()
+    model  = torch.load(model_name)
+    model.eval()
+    
+    #for i in range(narray.shape[0]):
+    clean = np.apply_along_axis(binarize_vec, 0,(1-narray)*255)
+    imgs = scaler.transform(clean.reshape(-1, 28*28)).reshape(-1, 28, 28)
+    print(imgs.shape)
+    sample = torch.Tensor(imgs)
+    print(sample.size())
+    sample = sample.view(-1, 1, 28, 28)
+    print(sample.size())
+    pred = model(sample)
+    label = torch.argmax(pred, dim = 1)
+    predictions.append(label)
+    
+    
+    return predictions[0].detach().numpy()
 
 def intersect(arrow_center, box_center):
     """
