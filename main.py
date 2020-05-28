@@ -133,8 +133,8 @@ for k, frame in enumerate(frames):
 
 	#frame generation placed after checking for = sign, = and the result will now appear at the same frame
 	if ordered_labels and ordered_labels[-1] == '=':
-		print("Ordered Labels: ", ordered_labels)
-		print("ordered: ", ordered)
+		#print("Ordered Labels: ", ordered_labels)
+		#print("ordered: ", ordered)
 		equation = ''.join(ordered_labels[:-1])
 		result = eval(equation)
 

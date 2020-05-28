@@ -118,7 +118,7 @@ def detect_arrow(src):
 
     regions = skimage.measure.regionprops(label_image)
     if len(regions) > 1:     arrow = regions[np.argmax([reg.area for reg in regions])]
-    elif len(regions) == 1:  arrow =regions[0]
+    elif len(regions) == 1:  arrow = regions[0]
 
     minr, minc, maxr, maxc = arrow.bbox
     cx,cy = arrow.centroid
@@ -313,13 +313,20 @@ def extract_valid_objects(boxes, centers, arrow_center):
     valid_boxes2 = []
     valid_centers2 = []
 
+    #hw = []
+    #wh = []
     for i, box in enumerate(valid_boxes):
         HeightWidthRatio = round((box[3] - box[1]) / (box[2] - box[0]), 2)
+        #hw.append(HeightWidthRatio)
+        WidthHeightRatio = round((box[2] - box[0]) / (box[3] - box[1]), 2)
+        #wh.append(WidthHeightRatio)
         #Calculating the distance to eliminate box 10, 11 (near the arrow)
         dst = distance.euclidean(arrow_center, valid_centers[i])
-        if (HeightWidthRatio > 0.5) and (dst > 60):
+        if (HeightWidthRatio > 0.5) and (dst > 60):                                        #TO-DO I changed it 0.5
             valid_boxes2.append(box)
             valid_centers2.append(valid_centers[i])
+    #print("HeightWidthRatios: ", hw)
+    #print("WidthHeightRatios: ", wh)
     return valid_boxes2, valid_centers2
 
 
@@ -411,11 +418,11 @@ def classify(narray, model_name):
     #for i in range(narray.shape[0]):
     clean = np.apply_along_axis(binarize_vec, 0,(1-narray)*255)
     imgs = scaler.transform(clean.reshape(-1, 28*28)).reshape(-1, 28, 28)
-    print(imgs.shape)
+    #print(imgs.shape)
     sample = torch.Tensor(imgs)
-    print(sample.size())
+    #print(sample.size())
     sample = sample.view(-1, 1, 28, 28)
-    print(sample.size())
+    #print(sample.size())
     pred = model(sample)
     label = torch.argmax(pred, dim = 1)
     predictions.append(label)
